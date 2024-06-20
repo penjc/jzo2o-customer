@@ -40,6 +40,9 @@ import java.util.List;
 @Service
 public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, AddressBook> implements IAddressBookService {
 
+    @Resource
+    private MapApi mapApi;
+
     @Override
     public List<AddressBookResDTO> getByUserIdAndCity(Long userId, String city) {
 
@@ -51,5 +54,41 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
             return new ArrayList<>();
         }
         return BeanUtils.copyToList(addressBooks, AddressBookResDTO.class);
+    }
+
+    @Override
+    public void add(AddressBookUpsertReqDTO addressBookUpsertReqDTO) {
+        Long userId = UserContext.currentUserId();
+        //TODO 如果新增地址设为默认，取消其他默认地址
+
+//        if (1 == addressBookUpsertReqDTO.getIsDefault()) {
+//            cancelDefault(userId);
+//        }
+
+        AddressBook addressBook = BeanUtil.toBean(addressBookUpsertReqDTO, AddressBook.class);
+        addressBook.setUserId(userId);
+
+        //组装详细地址
+        String completeAddress = addressBookUpsertReqDTO.getProvince() +
+                addressBookUpsertReqDTO.getCity() +
+                addressBookUpsertReqDTO.getCounty() +
+                addressBookUpsertReqDTO.getAddress();
+
+        //如果请求体中没有经纬度，需要调用第三方api根据详细地址获取经纬度
+        if(ObjectUtil.isEmpty(addressBookUpsertReqDTO.getLocation())){
+            //远程请求高德获取经纬度
+            LocationResDTO locationDto = mapApi.getLocationByAddress(completeAddress);
+            //经纬度(字符串格式：经度,纬度),经度在前，纬度在后
+            String location = locationDto.getLocation();
+            addressBookUpsertReqDTO.setLocation(location);
+        }
+
+        if(StringUtils.isNotEmpty(addressBookUpsertReqDTO.getLocation())) {
+            // 经度
+            addressBook.setLon(NumberUtils.parseDouble(addressBookUpsertReqDTO.getLocation().split(",")[0]));
+            // 纬度
+            addressBook.setLat(NumberUtils.parseDouble(addressBookUpsertReqDTO.getLocation().split(",")[1]));
+        }
+        baseMapper.insert(addressBook);
     }
 }
