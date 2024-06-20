@@ -136,6 +136,27 @@ public class ServeProviderServiceImpl extends ServiceImpl<ServeProviderMapper, S
         owner.add(institutionRegisterReqDTO.getPhone(), UserType.INSTITUTION, passwordEncoder.encode(institutionRegisterReqDTO.getPassword()));
     }
 
+    @Override
+    public void resetPassword(InstitutionResetPasswordReqDTO institutionResetPasswordReqDTO) {
+        //校验验证码
+        if(ObjectUtils.isEmpty(institutionResetPasswordReqDTO.getVerifyCode())){
+            throw new BadRequestException("验证码错误，请重新获取");
+        }
+        Boolean verify = smsCodeApi.verify(institutionResetPasswordReqDTO.getPhone(), SmsBussinessTypeEnum.INSTITUTION_RESET_PASSWORD, institutionResetPasswordReqDTO.getVerifyCode()).getIsSuccess();
+        if(!verify){
+            throw new BadRequestException("验证码错误，请重新获取");
+        }
+        //校验当前手机号
+        ServeProvider serveProvider = lambdaQuery().eq(ServeProvider::getPhone, institutionResetPasswordReqDTO.getPhone())
+                .one();
+        if (serveProvider == null) {
+            throw new BadRequestException("手机号错误");
+        }
+        //修改密码
+        lambdaUpdate().set(ServeProvider::getPassword, passwordEncoder.encode(institutionResetPasswordReqDTO.getPassword()))
+                .eq(ServeProvider::getId, serveProvider.getId())
+                .update();
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

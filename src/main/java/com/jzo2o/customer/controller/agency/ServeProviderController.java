@@ -1,6 +1,7 @@
 package com.jzo2o.customer.controller.agency;
 
 
+import com.jzo2o.customer.model.dto.request.InstitutionRegisterReqDTO;
 import com.jzo2o.customer.model.dto.request.InstitutionResetPasswordReqDTO;
 import com.jzo2o.customer.model.dto.response.ServeProviderInfoResDTO;
 import com.jzo2o.customer.service.IServeProviderService;
@@ -25,11 +26,18 @@ public class ServeProviderController {
     @Resource
     private IServeProviderService serveProviderService;
 
-
-
     @GetMapping("/currentUserInfo")
     @ApiOperation("获取当前用户信息")
     public ServeProviderInfoResDTO currentUserInfo() {
         return serveProviderService.currentUserInfo();
+    }
+
+    /**
+     * 机构重置密码
+     */
+    @PostMapping("/institution/resetPassword")
+    @ApiOperation("机构重置密码接口")
+    public void institutionResetPassword(@RequestBody InstitutionResetPasswordReqDTO institutionResetPasswordReqDTO){
+        serveProviderService.resetPassword(institutionResetPasswordReqDTO);
     }
 }

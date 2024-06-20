@@ -20,6 +20,7 @@ import javax.annotation.Resource;
 public class ServeProviderController {
     @Resource
     private IServeProviderService serveProviderService;
+
     /**
      * 机构注册
      */
